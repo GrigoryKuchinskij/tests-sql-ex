@@ -1,0 +1,909 @@
+---1---
+SELECT model, speed, hd
+FROM PC
+WHERE price < 500
+
+---2---
+SELECT DISTINCT maker
+FROM Product
+WHERE type = 'Printer'
+
+---3---
+SELECT model, ram, screen 
+FROM Laptop 
+WHERE price > CAST('1000' AS MONEY)
+
+---4---
+SELECT *
+FROM Printer
+WHERE color = 'y'
+
+---5---
+SELECT model, speed, hd
+FROM PC
+WHERE cd IN ('12x', '24x') AND
+price < 600
+
+---6---
+SELECT DISTINCT Product.maker, Laptop.speed
+FROM Product, Laptop 
+WHERE Laptop.hd >= 10 AND 
+  Product.model = Laptop.model
+
+---7---
+SELECT * FROM (SELECT model, price 
+ FROM PC
+ UNION
+ SELECT model, price 
+ FROM Laptop
+ UNION
+ SELECT model, price 
+ FROM Printer
+ ) AS a
+WHERE a.model IN (SELECT model 
+FROM Product 
+WHERE maker = 'B'
+)
+
+---8---
+SELECT maker
+FROM (SELECT DISTINCT maker, type 
+FROM Product 
+WHERE type IN ('PC', 'Laptop')
+ ) AS a
+GROUP BY maker
+HAVING COUNT(*) = 1 AND 
+ MAX(type) = 'PC'
+
+---9---
+SELECT DISTINCT maker
+FROM Product, PC
+WHERE PC.model = Product.model
+ AND PC.speed >= 450
+
+---10---
+SELECT model, price  
+FROM Printer  
+WHERE price = (SELECT MAX(price) 
+ FROM Printer
+ )
+
+---11---
+SELECT AVG(speed)
+FROM PC
+
+---12---
+SELECT AVG(speed)
+FROM Laptop
+WHERE price > cast('1000' as MONEY)
+
+---13---
+SELECT AVG(speed)
+FROM (SELECT PC.speed, Product.Maker  
+ FROM PC, Product
+ WHERE Product.model = PC.model
+ ) as st
+WHERE st.Maker = 'A'
+
+---14---
+SELECT Ships.class, Ships.name, Classes.country
+FROM Ships, Classes 
+WHERE Classes.numGuns >= 10 AND 
+  Classes.class = Ships.class
+
+---15---
+SELECT Distinct hd
+FROM PC
+GROUP BY hd
+HAVING count(hd) >= 2
+
+---16---
+SELECT DISTINCT p1.model, p2.model, p1.speed, p1.ram
+FROM pc p1, pc p2
+WHERE p1.speed = p2.speed AND p1.ram = p2.ram AND p1.model > p2.model
+
+---17---
+SELECT DISTINCT Product.type, Laptop.model, Laptop.speed
+FROM Laptop, Product
+WHERE Product.model = Laptop.model AND
+ Laptop.speed < (SELECT MIN(speed) FROM PC)
+
+---18---
+SELECT DISTINCT product.maker, printer.price
+FROM product, printer
+WHERE product.model = printer.model
+AND printer.color = 'y'
+AND printer.price = (
+  SELECT MIN(price) 
+  FROM printer
+  WHERE printer.color = 'y'
+  )
+
+---19---
+SELECT product.maker, AVG(screen)
+FROM laptop LEFT JOIN product ON product.model = laptop.model
+GROUP BY product.maker
+
+---20---
+SELECT maker, COUNT(model)
+FROM product
+WHERE type = 'pc'
+GROUP BY maker
+HAVING COUNT (DISTINCT model) >= 3
+
+---21---
+SELECT product.maker, MAX(pc.price)
+FROM product, pc
+WHERE product.model = pc.model
+GROUP BY product.maker
+
+---22---
+SELECT speed, AVG(price)
+FROM pc
+WHERE speed > 600
+GROUP BY speed
+
+---23---
+SELECT DISTINCT maker
+FROM product pr JOIN pc ON pr.model=pc.model
+WHERE speed>=750 AND maker IN( 
+  SELECT maker
+  FROM product pr JOIN laptop lt ON pr.model=lt.model
+  WHERE speed>=750 )
+
+---24---
+SELECT model
+FROM (SELECT model, price
+ FROM pc
+ UNION
+ SELECT model, price
+ FROM Laptop
+ UNION
+ SELECT model, price
+ FROM Printer
+ ) t1
+WHERE price = (SELECT MAX(price)
+ FROM (SELECT price
+  FROM pc
+  UNION
+  SELECT price
+  FROM Laptop
+  UNION
+  SELECT price
+  FROM Printer
+  ) t2
+ )
+
+---25---
+SELECT DISTINCT maker
+FROM product
+WHERE model IN (
+SELECT model
+FROM pc
+WHERE ram = (
+  SELECT MIN(ram)
+  FROM pc
+  )
+AND speed = (
+  SELECT MAX(speed)
+  FROM pc
+  WHERE ram = (
+   SELECT MIN(ram)
+   FROM pc
+   )
+  )
+)
+AND
+maker IN (
+SELECT maker
+FROM product
+WHERE type='printer'
+)
+
+---26---
+SELECT sum(prod.price)/sum(prod.kol) 
+FROM (SELECT price,1 as kol 
+ FROM pc,product
+ WHERE pc.model=product.model AND product.maker='A'
+ UNION ALL
+ SELECT price,1 as kol 
+ FROM laptop,product
+ WHERE laptop.model=product.model AND product.maker='A') as prod
+
+---27---
+SELECT product.maker, AVG(pc.hd)
+FROM pc, product 
+WHERE product.model = pc.model
+ AND product.maker IN ( SELECT DISTINCT maker
+  FROM product
+  WHERE product.type = 'printer')
+GROUP BY maker
+
+---28---
+SELECT count(maker)
+FROM product
+WHERE maker IN
+(
+  SELECT maker FROM product
+  GROUP BY maker
+  HAVING count(model) = 1
+)
+
+---31---
+SELECT DISTINCT class, country
+FROM classes
+WHERE bore >= 16
+
+---33---
+SELECT oc.ship 
+FROM battles bl LEFT JOIN outcomes oc ON oc.battle = bl.name
+WHERE bl.name = 'North Atlantic' AND oc.result = 'sunk'
+
+---34---
+SELECT name 
+FROM classes, ships 
+WHERE launched >= 1922 
+ AND displacement > 35000 
+ AND type = 'bb' 
+ AND ships.class = classes.class
+
+---35---
+SELECT model, type
+FROM product
+WHERE upper(model) NOT like '%[^A-Z]%'
+ OR model NOT like '%[^0-9]%'
+
+---36---
+SELECT name 
+FROM ships 
+WHERE class = name
+UNION
+SELECT ship as name 
+FROM classes, outcomes 
+WHERE classes.class = outcomes.ship
+
+---37---
+SELECT c.class
+FROM classes c LEFT JOIN (
+ SELECT class, name
+ FROM ships
+ UNION
+ SELECT ship, ship
+ FROM outcomes
+ ) AS s ON s.class = c.class
+GROUP BY c.class
+HAVING COUNT(s.name) = 1
+
+---38---
+SELECT country
+FROM classes
+GROUP BY country
+HAVING COUNT(DISTINCT type) = 2
+
+---39---
+WITH b_s AS
+ (SELECT o.ship, b.name, b.date, o.result
+ FROM outcomes o
+ LEFT JOIN battles b ON o.battle = b.name)
+SELECT DISTINCT a.ship 
+FROM b_s a
+WHERE UPPER(a.ship) IN
+ (SELECT UPPER(ship) 
+ FROM b_s b
+ WHERE b.date < a.date AND b.result = 'damaged')
+
+---41---
+WITH ut AS (SELECT model, price FROM PC
+ UNION
+ SELECT model, price FROM Laptop
+ union
+ SELECT model,price FROM Printer)
+SELECT Product.maker, 
+ case when count(price) = count(*) then max(price) end max_price
+FROM Product , ut
+where Product.model=ut.model
+group by Product.maker
+
+---42---
+SELECT ship, battle 
+FROM Outcomes 
+WHERE result = 'sunk'
+
+---43---
+SELECT name
+FROM battles
+WHERE year(date) NOT IN (SELECT launched
+ FROM ships
+ WHERE launched IS NOT NULL)
+
+---44---
+SELECT name 
+FROM Ships
+WHERE name LIKE 'R%'
+UNION
+SELECT Ship 
+FROM Outcomes
+WHERE Ship LIKE 'R%'
+
+---45---
+SELECT name 
+FROM ships
+WHERE name LIKE '% % %'
+UNION
+SELECT ship 
+FROM outcomes
+WHERE ship LIKE '% % %'
+
+---46---
+SELECT o.ship, displacement, numGuns 
+FROM (SELECT name AS ship, displacement, numGuns
+ FROM Ships s 
+ JOIN Classes c ON c.class=s.class
+ UNION
+ SELECT class AS ship, displacement, numGuns
+ FROM Classes c) AS a
+RIGHT JOIN Outcomes o
+ON o.ship=a.ship
+WHERE battle = 'Guadalcanal'
+
+---47---
+WITH T1 AS (
+ SELECT COUNT(name) as co, country 
+ FROM (SELECT name, country 
+  FROM Classes INNER JOIN Ships ON Ships.class = Classes.class
+  UNION
+  SELECT ship, country
+  FROM Classes INNER JOIN Outcomes ON Outcomes.ship = Classes.class) FR1
+ GROUP BY country
+ ),
+
+ T2 AS (
+ SELECT COUNT(name) as co, country
+ FROM ( SELECT name, country 
+  FROM Classes INNER JOIN Ships ON Ships.class = Classes.class
+  WHERE name IN (SELECT DISTINCT ship 
+   FROM Outcomes 
+   WHERE result LIKE 'sunk')
+  UNION
+  SELECT ship, country
+  FROM Classes INNER JOIN Outcomes ON Outcomes.ship = Classes.class
+  WHERE ship IN (SELECT DISTINCT ship
+   FROM Outcomes
+   WHERE result LIKE 'sunk')) FR2 
+ GROUP BY country)
+
+SELECT T1.country FROM T1
+INNER JOIN T2 ON T1.co = T2.co and T1.country = T2.country
+
+---48---
+SELECT cl.class
+FROM Classes cl
+LEFT JOIN Ships s ON s.class = cl.class
+WHERE cl.class IN (SELECT ship FROM Outcomes WHERE result = 'sunk') OR
+s.name IN (SELECT ship FROM Outcomes WHERE result = 'sunk')
+GROUP BY cl.class
+
+---49---
+SELECT Ships.name
+FROM Classes JOIN
+Ships ON Classes.class = ships.class
+WHERE bore = 16
+UNION
+SELECT Outcomes.ship
+FROM Outcomes JOIN
+Classes ON Classes.class = Outcomes.ship
+WHERE bore = 16
+
+---50---
+SELECT DISTINCT battle 
+FROM outcomes
+WHERE ship IN (SELECT name
+ FROM ships
+ WHERE class = 'kongo')
+
+---52---
+SELECT DISTINCT s.name
+FROM ships s JOIN classes c ON c.class = s.class
+WHERE UPPER(c.country) = 'JAPAN'
+  AND (numguns>=9 OR numguns IS NULL)
+  AND (c.bore < 19 OR c.bore IS NULL)
+  AND (displacement <= 65000 OR c.displacement IS NULL)
+  AND c.type = 'bb'
+
+---53---
+SELECT CAST(AVG(numGuns*1.0) AS DEC(12,2)) as 'Avg-numGuns'
+FROM classes WHERE type='bb'
+
+---54---
+SELECT CAST(AVG(numguns*1.0) AS NUMERIC (6,2)) 
+FROM (SELECT ship, type, numguns 
+      FROM Outcomes JOIN 
+           Classes ON ship = class 
+      UNION 
+      SELECT name, type, numguns 
+      FROM Ships s JOIN 
+           Classes c ON c.class = s.class
+      ) AS al_sh 
+WHERE type = 'bb'
+
+---55---
+SELECT c.class, t.y
+FROM classes c LEFT JOIN (SELECT class, MIN(launched) AS y
+ FROM ships
+ GROUP BY class
+ ) AS t ON c.class = t.class
+
+---56---
+SELECT c.class, COUNT(s.ship)
+FROM classes c
+  LEFT JOIN
+    (
+       SELECT o.ship, sh.class
+       FROM outcomes o
+       LEFT JOIN ships sh ON sh.name = o.ship
+       WHERE o.result = 'sunk'
+    ) AS s ON s.class = c.class OR s.ship = c.class
+GROUP BY c.class
+
+---59---
+SELECT c1, c2-(CASE
+ WHEN o2 is NULL THEN 0
+ ELSE o2
+ END)
+FROM
+ (SELECT point c1, SUM(inc) c2 FROM income_o
+ GROUP BY point) AS t1
+ LEFT JOIN
+ (SELECT point o1, SUM(out) o2 FROM outcome_o
+ GROUP BY point) AS t2
+ ON c1=o1
+
+---60---
+SELECT c1, c2-
+ (CASE
+ WHEN o2 is NULL THEN 0
+ ELSE o2
+ END)
+FROM
+ (SELECT point c1, sum(inc) c2 FROM income_o
+ WHERE date<'2001-04-15'
+ GROUP BY point) AS t1
+ LEFT JOIN
+ (SELECT point o1, sum(out) o2 FROM outcome_o
+ WHERE date<'2001-04-15'
+ GROUP BY point) AS t2
+ ON c1=o1
+
+---61---
+SELECT sum(i)
+FROM
+ (SELECT point, SUM(inc) AS i 
+ FROM income_o
+ GROUP BY point
+ UNION
+ SELECT point, -SUM(out) AS i 
+ FROM outcome_o
+ GROUP BY point) AS t
+
+---62---
+SELECT
+ (SELECT sum(inc) 
+ FROM Income_o
+ WHERE date<'2001-04-15')
+ -
+ (SELECT sum(out)
+ FROM Outcome_o
+ WHERE date<'2001-04-15')
+ AS remain
+
+---63---
+SELECT name 
+FROM Passenger
+WHERE ID_psg IN
+ (SELECT ID_psg 
+ FROM Pass_in_trip
+ GROUP BY place, ID_psg
+ HAVING count(*)>1)
+
+---64---
+SELECT i1.point, i1.date, 'inc', sum(inc) FROM Income,
+ (SELECT point, date FROM Income
+ EXCEPT
+ SELECT Income.point, Income.date FROM Income
+ JOIN Outcome ON (Income.point=Outcome.point) AND
+  (Income.date=Outcome.date)
+ ) AS i1
+WHERE i1.point=Income.point AND i1.date=Income.date
+GROUP BY i1.point, i1.date
+UNION
+SELECT o1.point, o1.date, 'out', sum(out) FROM Outcome,
+ (SELECT point, date FROM Outcome
+ EXCEPT
+ SELECT Income.point, Income.date FROM Income
+ JOIN Outcome ON (Income.point=Outcome.point) AND
+  (Income.date=Outcome.date)
+ ) AS o1
+WHERE o1.point=Outcome.point AND o1.date=Outcome.date
+GROUP BY o1.point, o1.date
+
+---67---
+SELECT count(*) FROM (
+  SELECT TOP 1 WITH TIES count(*) c, town_from, town_to FROM trip
+  GROUP BY town_from, town_to
+  ORDER BY c desc) AS t
+
+---68---
+SELECT count(*)
+FROM 
+ (SELECT TOP 1 WITH TIES sum(c) cc, c1, c2 
+ FROM 
+  (SELECT count(*) c, town_from c1, town_to c2 
+  FROM trip
+  WHERE town_from >= town_to
+  GROUP BY town_from, town_to
+  UNION ALL
+  SELECT count(*) c,town_to, town_from 
+  FROM trip
+  WHERE town_to > town_from
+  GROUP BY town_from, town_to) as t
+ GROUP BY c1,c2
+ ORDER BY cc desc) as tt
+
+---70---
+SELECT DISTINCT o.battle
+FROM outcomes o
+ LEFT JOIN ships s ON s.name = o.ship
+ LEFT JOIN classes c ON o.ship = c.class OR s.class = c.class
+WHERE c.country IS NOT NULL
+GROUP BY c.country, o.battle
+HAVING COUNT(o.ship) >= 3
+
+---71---
+SELECT p.maker
+FROM product p
+ LEFT JOIN pc ON pc.model = p.model
+WHERE p.type = 'PC'
+GROUP BY p.maker
+HAVING COUNT(p.model) = COUNT(pc.model)
+
+---72---
+SELECT TOP 1 WITH TIES name, c3 
+FROM passenger JOIN
+ (SELECT c1, max(c3) c3 
+ FROM
+  (SELECT pass_in_trip.ID_psg c1, Trip.ID_comp c2, count(*) c3 
+  FROM pass_in_trip JOIN trip ON trip.trip_no=pass_in_trip.trip_no
+  GROUP BY pass_in_trip.ID_psg, Trip.ID_comp) AS t
+ GROUP BY c1
+ HAVING count(*)=1) AS tt
+ON ID_psg=c1
+ORDER BY c3 desc
+
+---73---
+SELECT DISTINCT c.country, b.name
+FROM battles b, classes c
+EXCEPT
+ SELECT c.country, o.battle
+ FROM outcomes o
+LEFT JOIN ships s ON s.name = o.ship
+LEFT JOIN classes c ON o.ship = c.class OR s.class = c.class
+WHERE c.country IS NOT NULL
+GROUP BY c.country, o.battle
+
+---74---
+SELECT c.country, c.class
+FROM classes c
+WHERE UPPER(c.country) = 'RUSSIA' AND EXISTS (
+ SELECT c.country, c.class
+ FROM classes c
+ WHERE UPPER(c.country) = 'RUSSIA' )
+UNION ALL
+SELECT c.country, c.class
+FROM classes c
+WHERE NOT EXISTS (SELECT c.country, c.class
+ FROM classes c
+ WHERE UPPER(c.country) = 'RUSSIA' )
+
+---77---
+WITH t AS (
+ SELECT count(DISTINCT trip.trip_no) AS Qty, date
+ FROM trip INNER JOIN pass_in_trip ON trip.trip_no=pass_in_trip.trip_no
+ WHERE town_from='Rostov'
+ GROUP BY date)
+SELECT *
+FROM t
+WHERE Qty=(SELECT max(Qty) FROM t)
+
+---78---
+SELECT name, 
+ REPLACE(CONVERT(CHAR(12), DATEADD(m, DATEDIFF(m,0,date),0), 102),'.','-') 
+ AS first_day,
+ REPLACE(CONVERT(CHAR(12), DATEADD(s,-1,DATEADD(m, DATEDIFF(m,0,date)+1,0)), 102),'.','-')
+ AS last_day
+FROM Battles
+
+---79---
+SELECT Passenger.name, A.minutes
+FROM (
+ SELECT P.ID_psg,
+  SUM((DATEDIFF(minute, time_out, time_in) + 1440)%1440) AS minutes,
+  MAX(SUM((DATEDIFF(minute, time_out, time_in) + 1440)%1440)) OVER() 
+  AS MaxMinutes
+ FROM Pass_in_trip P JOIN Trip AS T ON P.trip_no = T.trip_no
+ GROUP BY P.ID_psg
+ ) AS A JOIN Passenger ON Passenger.ID_psg = A.ID_psg
+WHERE A.minutes = A.MaxMinutes
+
+---80---
+SELECT DISTINCT maker
+FROM product
+WHERE maker NOT IN (
+ SELECT maker
+ FROM product
+ WHERE type='PC' AND model NOT IN (
+  SELECT model
+  FROM PC))
+
+---81---
+SELECT O.*
+FROM outcome O INNER JOIN
+  (SELECT TOP 1 WITH TIES YEAR(date) AS Y, MONTH(date) AS M,
+    SUM(out) AS ALL_TOTAL
+  FROM outcome
+  GROUP BY YEAR(date), MONTH(date)
+  ORDER BY ALL_TOTAL DESC) R 
+  ON YEAR(O.date) = R.Y AND MONTH(O.date) = R.M
+
+---83---
+SELECT name
+FROM Ships AS s JOIN Classes AS cl ON s.class = cl.class
+WHERE
+ CASE WHEN numGuns = 8 THEN 1 ELSE 0 END +
+ CASE WHEN bore = 15 THEN 1 ELSE 0 END +
+ CASE WHEN displacement = 32000 THEN 1 ELSE 0 END +
+ CASE WHEN type = 'bb' THEN 1 ELSE 0 END +
+ CASE WHEN launched = 1915 THEN 1 ELSE 0 END +
+ CASE WHEN s.class = 'Kongo' THEN 1 ELSE 0 END +
+ CASE WHEN country = 'USA' THEN 1 ELSE 0 END > = 4
+
+---84---
+SELECT C.name, A.N_1_10, A.N_11_20, A.N_21_30
+FROM (
+  SELECT T.ID_comp,
+    SUM(CASE WHEN DAY(P.date) <= 10 THEN 1 ELSE 0 END) AS N_1_10,
+    SUM(CASE WHEN (DAY(P.date) > 10 AND DAY(P.date) <= 20) 
+      THEN 1 ELSE 0 END) AS N_11_20,
+    SUM(CASE WHEN DAY(P.date) > 20 THEN 1 ELSE 0 END) AS N_21_30
+  FROM Trip AS T JOIN Pass_in_trip AS P ON T.trip_no = P.trip_no 
+    AND CONVERT(char(6), P.date, 112) = '200304'
+  GROUP BY T.ID_comp) AS A JOIN Company AS C ON A.ID_comp = C.ID_comp
+
+---85---
+SELECT maker
+FROM product
+GROUP BY maker
+HAVING count(distinct type) = 1 AND
+       (min(type) = 'pc' and count(model) > 2 OR
+       (min(type) = 'printer' ))
+
+---86---
+SELECT maker,
+  CASE count(distinct type) when 2 then MIN(type) + '/' + MAX(type)
+    when 1 then MAX(type)
+    when 3 then 'Laptop/PC/Printer' END
+FROM Product
+GROUP BY maker
+
+---88---
+SELECT
+  (SELECT name FROM Passenger WHERE ID_psg = B.ID_psg) AS name,
+  B.trip_Qty,
+  (SELECT name FROM Company WHERE ID_comp = B.ID_comp) AS Company
+FROM (
+  SELECT P.ID_psg, MIN(T.ID_comp) AS ID_comp, COUNT(*) AS trip_Qty,  
+    MAX(COUNT(*)) OVER() AS Max_Qty
+  FROM Pass_in_trip AS P JOIN
+    Trip AS T ON P.trip_no = T.trip_no
+  GROUP BY P.ID_psg
+  HAVING MIN(T.ID_comp) = MAX(T.ID_comp)
+  ) AS B
+WHERE B.trip_Qty = B.Max_Qty
+
+---89---
+SELECT Maker , count(distinct model) Qty 
+FROM Product
+GROUP BY maker
+HAVING 
+  count(distinct model) > = ALL(
+    SELECT count(DISTINCT model) 
+    FROM Product
+    GROUP BY maker)
+  OR
+  count(distinct model) <= ALL(
+    SELECT count(DISTINCT model) 
+    FROM Product
+    GROUP BY maker)
+
+---90---
+SELECT maker, model, type
+FROM (
+  SELECT row_number() over (order by model) p1,
+    row_number() over (order by model desc) p2, *
+  FROM product) t1
+WHERE p1 > 3 AND p2 > 3
+
+---93---
+SELECT c.name, sum(selvr.casevr)
+FROM (
+  SELECT distinct t.id_comp, pt.trip_no, pt.date,t.time_out,t.time_in,
+    --pt.id_psg,
+    case
+      when DATEDIFF(mi, t.time_out,t.time_in)> 0 then DATEDIFF(mi, 
+        t.time_out,t.time_in)
+      when DATEDIFF(mi, t.time_out,t.time_in)<=0 then DATEDIFF(mi, 
+        t.time_out,t.time_in+1)
+    end casevr
+  FROM pass_in_trip pt LEFT JOIN trip t ON pt.trip_no=t.trip_no
+  ) selvr LEFT JOIN company c ON selvr.id_comp=c.id_comp
+GROUP BY c.name
+
+---95---
+SELECT name,
+  COUNT(DISTINCT CONVERT(CHAR(24),date) + 
+    CONVERT(CHAR(4),Trip.trip_no)) v_per,
+  COUNT(DISTINCT plane) typ_ct,
+  COUNT(DISTINCT ID_psg) pas_ct,
+  COUNT(*) pas_com_ct
+FROM Company, Pass_in_trip, Trip
+WHERE Company.ID_comp=Trip.ID_comp AND Trip.trip_no=Pass_in_trip.trip_no
+GROUP BY Company.ID_comp,name
+
+---96---
+WITH t AS (
+  SELECT v.v_name, v.v_id,
+    count(case when v_color = 'R' then 1 end) over(partition by v_id) 
+      cnt_r,
+    count(case when v_color = 'B' then 1 end) over(partition by b_q_id) 
+      cnt_b
+  FROM utV v join utB b on v.v_id = b.b_v_id)
+
+SELECT v_name
+FROM t
+WHERE cnt_r > 1 AND cnt_b > 0
+GROUP BY v_name
+
+---102---
+SELECT name 
+FROM passenger
+WHERE id_psg IN (
+  SELECT id_psg from trip t,pass_in_trip pit
+  WHERE t.trip_no=pit.trip_no
+  GROUP BY id_psg
+  HAVING count(DISTINCT CASE WHEN town_from<=town_to THEN 
+    town_from+town_to ELSE town_to+town_from end)=1)
+
+---103---
+SELECT min(t.trip_no) '1_min', min(tt.trip_no) '2_min', min(ttt.trip_no) '3_min', max(t.trip_no) '3_max', max(tt.trip_no) '2_max', max(ttt.trip_no) '1_max'
+FROM trip t, trip tt, trip ttt
+WHERE tt.trip_no > t.trip_no AND ttt.trip_no > tt.trip_no
+
+---104---
+WITH t AS(
+  SELECT x.class, x.numGuns, row_number() over(partition by x.class order by 
+    x.numguns) n
+  FROM Classes x, Classes y
+  WHERE x.type='bc')
+SELECT DISTINCT class,'bc-' + cast(n as char(2))
+FROM t WHERE numguns >= n
+
+---105---
+SELECT maker, model,
+       row_number() over (order by maker, model),
+       dense_rank() over (order by maker),
+       rank() over (order by maker),
+       count(*) over (order by maker)
+FROM product
+
+---107---
+SELECT name, trip_no, date
+FROM (
+  SELECT row_number() over(order by date+time_out,ID_psg) rn, name,
+    Trip.trip_no, date
+  FROM Company,Pass_in_trip,Trip
+  WHERE Company.ID_comp=Trip.ID_comp AND Trip.trip_no=Pass_in_trip.trip_no
+  AND town_from='Rostov' AND year(date)=2003 AND month(date)=4) _
+WHERE rn=5
+
+---108---
+SELECT DISTINCT b1.b_vol X, b2.b_vol Y, b3.b_vol Z 
+FROM utb b1, utb b2, utb b3
+WHERE b1.B_VOL < b2.B_VOL AND b2.B_VOL < b3.B_VOL 
+  AND NOT ( b3.B_VOL > SQRT( SQUARE(b1.B_VOL) + SQUARE(b2.B_VOL)))
+
+---109---
+SELECT A.Q_NAME AS q_name, A.Whites AS Whites, A.Cnt - A.Whites AS Blacks
+FROM (
+  SELECT Q.Q_ID, Q.Q_NAME, (SUM(SUM(B.B_VOL)) OVER())/765 AS Whites,
+    COUNT(*) OVER() AS Cnt
+  FROM utQ AS Q LEFT JOIN utB AS B ON Q.Q_ID = B.B_Q_ID
+  GROUP BY Q.Q_ID, Q.Q_NAME
+  HAVING SUM(B.B_VOL) = 765 OR SUM(B.B_VOL) IS NULL) AS A
+
+---110---
+SELECT name 
+FROM passenger 
+WHERE id_psg IN (
+  SELECT id_psg
+  FROM pass_in_trip pit JOIN trip t ON pit.trip_no = t.trip_no
+  WHERE time_in < time_out AND datepart(dw, date) = 7
+ )
+
+---111---
+SELECT pvt.Q_NAME, [R] AS qty
+FROM (
+  SELECT Q_ID, Q_NAME, B_VOL, V_COLOR
+  FROM dbo.utQ JOIN dbo.utB ON utB.B_Q_ID = utQ.Q_ID JOIN dbo.utV 
+    ON utV.V_ID = utB.B_V_ID) t1
+PIVOT(sum(B_VOL) for V_COLOR in ([R], [G], [B])) pvt 
+WHERE [R] = [G] and [R] = [B] and [R] > 0 and [R] < 255
+
+---112---
+WITH cte AS (
+  SELECT ((count(distinct [V_ID]) * 255 - sum([B_VOL]))/ 255) AS fv
+  FROM utv LEFT JOIN [dbo].[utB] ON [utB].[B_V_ID] = [utV].[V_ID]
+  GROUP BY [V_COLOR])
+SELECT iif(count(*)=3,min(fv),0) AS qty FROM cte
+
+---113---
+SELECT sum( 255-ISNULL ([R],0) ) R , sum( 255-isnull([G],0) ) G, sum(255-isnull([B],0)) B
+FROM (
+  SELECT ISNULL(B_Q_ID, Q_ID) ID, V_COLOR, B_VOL Vol 
+  FROM utB RIGHT JOIN utQ on B_Q_ID=Q_ID LEFT JOIN utV on B_V_ID=V_ID
+  ) as SourceT
+PIVOT ( SUM(Vol) For V_COLOR IN ([R], [G], [B]) ) Pvt
+WHERE ISNULL ([R],0) + ISNULL([G],0) + ISNULL([B],0) < 765
+
+---114---
+WITH b AS(
+  SELECT ID_psg, COUNT(*) as cnt 
+  FROM Pass_In_Trip 
+  GROUP BY ID_psg, place),
+b1 AS(
+  SELECT DISTINCT ID_psg, cnt 
+  FROM b 
+  WHERE cnt =(SELECT MAX(cnt) FROM b))
+SELECT name, cnt FROM b1 JOIN Passenger p ON (b1.ID_psg = p.ID_psg)
+
+---115---
+SELECT DISTINCT Up=u.b_vol, Down=d.b_vol, Side=s.b_vol,
+  Rad=cast(POWER((POWER(s.b_vol,2)-POWER((1.*d.b_vol-1.*u.b_vol)/2,2)), 
+  1./2.)/2 as dec(15,2))
+FROM utB u, utB d, utB s
+WHERE u.b_vol<d.b_vol AND 1.*u.b_vol+1.*d.b_vol=2.*s.b_vol
+
+---117---
+SELECT TOP 1 WITH TIES country, x, n
+FROM classes
+CROSS APPLY(values(numguns*5000,'numguns')
+                  ,(bore*3000,'bore')
+                  ,(displacement,'displacement'))V(x,n)
+GROUP BY country, x, n
+ORDER BY rank()over(partition by country order by x desc)
+
+---130---
+WITH cte AS (
+  SELECT row_number() over(order by [date], name) rn, count(*) over() cnt, 
+    [date], [name]
+  FROM [dbo].[Battles])
+SELECT a.[rn], a.[name], a.[date], b.[rn], b.[name], b.[date]
+FROM cte a LEFT JOIN cte b ON a.[rn] = b.rn - ([b].cnt / 2 + b.cnt % 2)
+WHERE a.[rn] <= a.cnt / 2 + a.cnt % 2
+
+---135---
+SELECT TRY_CAST(c AS datetime) AS max_time
+FROM (
+  SELECT max(FORMAT(B_DATETIME, 'yyyy-MM-dd hh:mm:ss.fff')) c
+  FROM utB
+  WHERE B_Q_ID > 0 OR B_V_ID > 0 OR B_VOL > 0
+  GROUP BY FORMAT(B_DATETIME, 'yyyyMMddhh')  
+  ) t
