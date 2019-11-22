@@ -898,3 +898,12 @@ WITH cte AS (
 SELECT a.[rn], a.[name], a.[date], b.[rn], b.[name], b.[date]
 FROM cte a LEFT JOIN cte b ON a.[rn] = b.rn - ([b].cnt / 2 + b.cnt % 2)
 WHERE a.[rn] <= a.cnt / 2 + a.cnt % 2
+
+---135---(не проходит)
+SELECT TRY_CAST(c AS datetime) AS max_time
+FROM (
+  SELECT max(FORMAT(B_DATETIME, 'yyyy-MM-dd hh:mm:ss.fff')) c
+  FROM utB
+  WHERE B_Q_ID > 0 OR B_V_ID > 0 OR B_VOL > 0
+  GROUP BY FORMAT(B_DATETIME, 'yyyyMMddhh')  
+  ) t
